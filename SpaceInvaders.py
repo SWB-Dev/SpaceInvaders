@@ -1,5 +1,10 @@
 from turtle import *
 import os
+import math
+
+playingGame = True
+quitGame = False
+enemies = []
 
 def SetupScreen(wn):
 	wn.bgcolor("black")
@@ -19,33 +24,32 @@ def SetupScreen(wn):
 	border_pen.hideturtle()
 	wn.listen()
 
-class Bullet:
+class Bullet(Turtle):
 	def __init__(self, player):
-		player = player
-		self.bullet = Turtle()
-		self.bullet.hideturtle()
-		self.bullet.color("red")
-		self.bullet.shape("triangle")
-		self.bullet.penup()
-		self.bullet.speed(0)
-		self.bullet.setposition(player.xcor(), player.ycor())
-		self.bullet.setheading(90)
-		self.bullet.st()
+		super().__init__()
+		self.hideturtle()
+		self.color("red")
+		self.shape("triangle")
+		self.penup()
+		self.speed(0)
+		self.setposition(player.xcor(), player.ycor())
+		self.setheading(90)
+		self.showturtle()
 		self.speed = 10
 		self.collided = False
-		self.moving = False
+		self.moving = True
 
-	def MoveBullet(self):
-		if self.moving:
-			pass
-		else:
-			self.moving = True
-			while not self.collided and self.moving:
-				self.bullet.sety(self.bullet.ycor() + self.speed)
-				if self.bullet.ycor() >= 600:
-					self.bullet.ht()
-					self.collided = True
-					self.moving = False
+class Enemy(Turtle):
+	def __init__(self,pos):
+		super().__init__()
+		self.hideturtle()
+		self.color("green")
+		self.shape("circle")
+		self.penup()
+		self.speed(0)
+		self.setposition(pos,200)
+		self.speed = 10
+		self.st()
 
 class Player:
 	def __init__(self,wn):
@@ -58,6 +62,7 @@ class Player:
 		self.player.setheading(90)
 		self.speed = 2
 		self.moving = False
+		self.direction = ""
 		self.bullets = []
 
 		wn.onkeypress(self.MoveLeft,"Left")
@@ -69,42 +74,76 @@ class Player:
 
 	def StopMoving(self):
 		self.moving = False
+		self.direction = ""
 
 	def MoveLeft(self):
-		if self.moving:
-			pass
-		else:
-			self.moving = True
-			while self.moving:
-				if self.player.xcor() <= -285:
-					self.moving = False
-				else:
-					self.player.setx(self.player.xcor() - self.speed)
-
-		
+		self.moving = True
+		self.direction = "Left"
 
 	def MoveRight(self):
-		if self.moving:
-			pass
-		else:
-			self.moving = True
-			while self.moving:
-				if self.player.xcor() >= 285:
-					self.moving = False
-				else:
-					self.player.setx(self.player.xcor() + self.speed)
+		self.moving = True
+		self.direction = "Right"
 
 	def Fire(self):
 		bullet = Bullet(self.player)
-		bullet.MoveBullet()
 		self.bullets.append(bullet)
+		print(len(self.bullets))
+
+def CreateEnemies(positions):
+	for pos in positions:
+		enemies.append(Enemy(pos))
+
+def MoveBullets(player,enemies):
+	for bullet in player.bullets:
+		bullet.sety(bullet.ycor() + bullet.speed)
+		for enemy in enemies:
+			if IsCollide(enemy,bullet):
+				player.bullets.remove(bullet)
+				bullet.clear()
+				bullet.reset()
+				continue
+		if bullet.ycor() > 285:
+			player.bullets.remove(bullet)
+			bullet.clear()
+			bullet.reset()
 
 
-def Main():
-	wn = Screen()
-	SetupScreen(wn)
-	player = Player(wn)
+def IsCollide(t1,t2):
+	distance = math.sqrt(math.pow(t1.xcor() + t2.xcor(),2)) + math.sqrt(math.pow(t1.ycor() + t2.ycor(),2))
+	print(distance)
+	return False
+	# if distance <= 15:
+	# 	return True
+	# else:
+	# 	return False
 
-	wn.mainloop()
+def MovePlayer(player):
+	if player.direction == "Left":
+		if player.player.xcor() <= -285:
+			player.moving = False
+		else:
+			player.player.setx(player.player.xcor() - player.speed)
+	elif player.direction =="Right":
+		if player.player.xcor() >= 285:
+			player.moving = False
+		else:
+			player.player.setx(player.player.xcor() + player.speed)
 
-Main()
+def Quit():
+	global playingGame
+	playingGame = False
+
+wn = Screen()
+SetupScreen(wn)
+player = Player(wn)
+onkey(Quit,'q')
+CreateEnemies([-200,-100,0,100,200])
+
+while playingGame:
+	MovePlayer(player)
+	MoveBullets(player,enemies)
+
+
+	wn.update()
+
+# mainloop()
